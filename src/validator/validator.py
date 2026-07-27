@@ -4,7 +4,9 @@ def is_positive(num: int) -> bool:
 
 import re
 def is_valid_email (email:str)-> bool:
-    "Check whether email is valid"
+    """
+    Check whether email follows basic validation rules
+    """
     #pattern = r"^[\w\.-]+@[\w\.-]+\.\w+$"
     #return bool(re.match(pattern, email))
     email = email.strip().lower()
@@ -14,8 +16,6 @@ def is_valid_email (email:str)-> bool:
         return False
     if "." not in email:
         return False
-    if email.startswith("@"):
-        return False
-    if "@." in email:
+    if email.startswith("@") or "@." in email:
         return False
     return True
