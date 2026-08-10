@@ -1,4 +1,5 @@
 from src.validator.validator import is_positive,is_valid_email
+from src.validator.phone import count_digits
 print(is_positive(10))
 print(is_positive(-5))
 #print(is_valid_email('john@email.com'))
@@ -10,3 +11,4 @@ print(is_valid_email('@gmail.com'))
 print(is_valid_email('abc@.com'))               
 print(is_valid_email(""))                     
 print(is_valid_email("   "))                  
+print(count_digits('9876543210'))
