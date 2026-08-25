@@ -28,3 +28,15 @@ def is_valid_email (email:str)-> bool:
 def validate_emails(emails:list[str])-> list[bool]:
     """Validate a list of email addresses"""
     return [is_valid_email(email) for email in emails]
+
+def is_valid_age(age):
+    return age is not None and isinstance(age,int) and age >= 0
+
+def validate_age(age):
+    if age is None:
+        return False, "Age not mentioned"
+    if not isinstance(age,int):
+        return False, "Incorrect data type"
+    if age < 0:
+        return False, "Invalid age"
+    return True, None

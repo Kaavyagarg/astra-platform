@@ -1,4 +1,4 @@
-from src.validator.phone import is_valid_phone
+from validator.phone import is_valid_phone
 
 def test_valid_phone_without_country_code():
     assert is_valid_phone("9876543210") is True
