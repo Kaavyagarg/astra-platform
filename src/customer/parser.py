@@ -13,3 +13,10 @@ def parse_customer(customer):
     else:
         parsed_customer['age'] = convert_age(age)
     return parsed_customer
+
+def parse_api_customer(data):
+    return {
+        "name": data.get("name"),
+        "age": data.get("age"),
+        "phone": data.get("phone")
+    }
