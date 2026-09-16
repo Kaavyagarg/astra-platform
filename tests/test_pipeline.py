@@ -126,3 +126,84 @@ def test_run_api_customers_pipeline_rejects_missing_fields(monkeypatch):
     result = run_api_customers_pipeline("https://example.com")
     assert len(result['rejected']) == 1
     assert result['rejected'][0]['reason'] == 'Age not mentioned'
+
+def test_run_api_customers_pipeline_rejects_wrong_age_type(monkeypatch):
+    def fake_get_url_data(url):
+        return [
+            {
+                "name" : "David",
+                "age" : "25",
+                "phone" : "9871234560"
+            }
+        ]
+    monkeypatch.setattr(
+        "customer.pipeline.get_url_data",
+        fake_get_url_data
+    )
+    result = run_api_customers_pipeline("https://example.com")
+    assert len(result["processed"]) == 0
+    assert len(result['rejected']) == 1
+    assert result['rejected'][0]['reason'] == 'Incorrect data type'
+
+def test_run_api_customers_pipeline_api_error(monkeypatch):
+    import requests
+    def fake_get_url_data(url):
+        raise requests.RequestException("API unavailable")
+    monkeypatch.setattr(
+        "customer.pipeline.get_url_data",
+        fake_get_url_data
+    )
+    with pytest.raises(requests.RequestException):
+        run_api_customers_pipeline("https://example.com")
+
+def test_run_api_customers_pipeline_cleans_customer(monkeypatch):
+    def fake_get_url_data(url):
+        return [
+            {
+                "name":"Alice",
+                "age": 25,
+                "phone":"9123467580"
+            }
+        ]
+    monkeypatch.setattr(
+        "customer.pipeline.get_url_data",
+        fake_get_url_data
+    )
+    result = run_api_customers_pipeline("https://example.com")
+    assert len(result["processed"]) == 1
+    assert result["processed"][0]["name"] == "Alice"
+
+def test_run_api_customers_pipeline_multiple_valid_customers(monkeypatch):
+    def fake_get_url_data(url):
+        return [
+            {
+                "name" : "Alice",
+                "age" : 25,
+                "phone" : "9213456780"
+            },
+            {
+                "name" : "Bob",
+                "age" : 24,
+                "phone" : "93124567780"
+            }
+        ]
+    monkeypatch.setattr(
+        "customer.pipeline.get_url_data",
+        fake_get_url_data
+    )
+    result = run_api_customers_pipeline("https://example.com")
+    assert len(result["processed"]) == 2
+    assert len(result["rejected"]) == 0
+    assert result['processed'][0]['name'] == 'Alice'
+    assert result['processed'][1]['name'] == "Bob"
+
+def test_run_api_customers_pipeline_empty_response(monkeypatch):
+    def fake_get_url_data(url):
+        return []
+    monkeypatch.setattr(
+        "customer.pipeline.get_url_data",
+        fake_get_url_data
+    )
+    result = run_api_customers_pipeline("https://example.com")
+    assert result['processed'] == []
+    assert result['rejected'] == []
