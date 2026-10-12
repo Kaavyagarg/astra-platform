@@ -7,6 +7,7 @@ from customer.parser import parse_customer
 from customer.config import CUSTOMER_DATA_FILE
 from customer.api_client import get_url_data
 from customer.parser import parse_api_customer
+from customer.database import (create_connection, create_customers_table, save_customer)
 #logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -34,3 +35,13 @@ def run_api_customers_pipeline(url):
     for item in data:
         customers.append(parse_api_customer(item))
     return process_customers(customers)
+
+def run_customer_database_pipeline(path, database_path):
+    connection = create_connection(database_path)
+    create_customers_table(connection)
+    result = run_customer_pipeline(path)
+    for customer in result["processed"]:
+        print(customer)
+        save_customer(connection, customer)
+    connection.close()
+    return result 

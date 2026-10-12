@@ -3,7 +3,8 @@ import pytest
 from customer.parser import convert_age
 from customer.csv_reader import read_customers_csv
 from customer.pipeline import run_api_customer_pipeline
-from customer.pipeline import run_api_customers_pipeline
+from customer.pipeline import run_api_customers_pipeline, run_customer_database_pipeline
+from customer.database import (create_connection, get_customers)
 def test_run_customer_pipeline():
     result = run_customer_pipeline("data/customers.csv")
     assert "processed" in result
@@ -207,3 +208,23 @@ def test_run_api_customers_pipeline_empty_response(monkeypatch):
     result = run_api_customers_pipeline("https://example.com")
     assert result['processed'] == []
     assert result['rejected'] == []
+
+def test_run_customer_database_pipeline(tmp_path):
+    customer_path = tmp_path / "customers.csv"
+    database_path = tmp_path / "astra.db"
+    customer_path.write_text(
+        "name,age,phone\n"
+        "Alice,25,9876543210\n"
+        'Bob,30, 91234567789\n'
+        "Charlie,abc,9999999999\n"
+    )
+    result = run_customer_database_pipeline(
+        customer_path,
+        database_path
+    )
+    connection = create_connection(database_path)
+    customers = get_customers(connection)
+    assert len(customers) == 2
+    assert len(result['processed']) == 2
+    assert len(result["rejected"]) == 1
+    connection.close()
