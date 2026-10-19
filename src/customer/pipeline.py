@@ -38,10 +38,11 @@ def run_api_customers_pipeline(url):
 
 def run_customer_database_pipeline(path, database_path):
     connection = create_connection(database_path)
-    create_customers_table(connection)
-    result = run_customer_pipeline(path)
-    for customer in result["processed"]:
-        print(customer)
-        save_customer(connection, customer)
-    connection.close()
-    return result 
+    try:
+        create_customers_table(connection)
+        result = run_customer_pipeline(path)
+        for customer in result["processed"]:
+            save_customer(connection, customer)
+        return result
+    finally:
+        connection.close()

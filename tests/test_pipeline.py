@@ -228,3 +228,22 @@ def test_run_customer_database_pipeline(tmp_path):
     assert len(result['processed']) == 2
     assert len(result["rejected"]) == 1
     connection.close()
+
+def test_database_pipeline_closes_connection_on_error(tmp_path,monkeypatch):
+    from customer import pipeline
+    database_path = tmp_path/"astra.db"
+    csv_path = tmp_path/"missing.csv"
+    connections = []
+    original_create_connection = pipeline.create_connection
+    def tracked_connection(path):
+        connection = original_create_connection(path)
+        connections.append(connection)
+        return connection
+    monkeypatch.setattr(
+        pipeline, "create_connection", tracked_connection
+    )
+    with pytest.raises(FileNotFoundError):
+        run_customer_database_pipeline(csv_path, database_path)
+    assert len(connections) == 1
+    with pytest.raises(Exception, match='closed'):
+        connections[0].execute("SELECT 1")

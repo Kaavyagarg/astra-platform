@@ -85,4 +85,19 @@ def delete_customer(connection,name):
         (name,)
     )
     connection.commit()
-    
+def save_customers_batch(connection, customers):
+    try:
+        for customer in customers:
+            connection.execute(
+                """
+                Insert into customers (name,city,age)
+                values (?,?,?)""",
+                (
+                    customer["name"],
+                    customer["city"],
+                    customer["age"]
+                )
+            )
+    except Exception:
+        connection.rollback()
+        raise
