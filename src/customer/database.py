@@ -101,3 +101,24 @@ def save_customers_batch(connection, customers):
     except Exception:
         connection.rollback()
         raise
+
+def get_table_schema(connection, table_name):
+    cursor = connection.execute(
+        f"PRAGMA table_info({table_name})"
+    )
+    columns = [description[0] for description in cursor.description]
+    return [
+        dict(zip(columns,row)) 
+        for row in cursor.fetchall()
+        ]
+
+def add_country_column(connection):
+    schema = get_table_schema(connection,"customers")
+    column_names = {
+        column['name'] for column in schema
+    }
+    if "country" not in column_names:
+        connection.execute(
+        'ALTER TABLE customers ADD COLUMN country TEXT'
+        )
+        connection.commit()

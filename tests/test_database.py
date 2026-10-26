@@ -1,6 +1,6 @@
 from customer.database import (create_connection,create_customers_table,insert_customer,get_customers, 
 save_customer,get_adult_customers_by_min_age,update_customer_city,
-delete_customer,save_customers_batch)
+delete_customer,save_customers_batch,get_table_schema,add_country_column)
 import pytest 
 import sqlite3
 def test_create_connection(tmp_path):
@@ -212,4 +212,48 @@ def test_database_not_null_constraint(tmp_path):
             "Insert into test_customers (name,age) values (?,?)",
             (None,25)
         )
+    connection.close()
+
+def test_get_table_schema(tmp_path):
+    connection = create_connection(tmp_path/'astra.db')
+    create_customers_table(connection)
+    schema = get_table_schema(connection,"customers")
+    column_names = [column["name"] for column in schema]
+    assert column_names == ["id","name","city","age"]
+    connection.close()
+
+def test_add_country_column_preserves_data(tmp_path):
+    connection = create_connection(tmp_path/'astra.db')
+    create_customers_table(connection)
+    insert_customer(
+        connection,
+        {"name":"Alice","city":"Delhi","age":25}
+    )
+    add_country_column(connection)
+
+    schema = get_table_schema(connection,"customers")
+    column_names = [column["name"] for column in schema]
+    customers = get_customers(connection)
+
+    assert "country" in column_names
+    assert customers[0]["name"] == "Alice"
+    assert customers[0]["city"] == "Delhi"
+    assert customers[0]["age"] == 25
+    row = connection.execute(
+        "SELECT country from customers where name = ?",
+        ("Alice",)
+    ).fetchone()
+    assert row[0] is None 
+
+def test_add_country_column_is_safe_to_run_twice(tmp_path):
+    connection = create_connection(tmp_path/'astra.db')
+    create_customers_table(connection)
+
+    add_country_column(connection)
+    add_country_column(connection)
+
+    schema = get_table_schema(connection,"customers")
+    column_names = [column["name"] for column in schema]
+
+    assert column_names.count("country") == 1
     connection.close()
