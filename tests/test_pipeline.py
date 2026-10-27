@@ -1,10 +1,12 @@
 from customer.pipeline import run_customer_pipeline
 import pytest
+import logging
+import customer.pipeline as pipeline_module
 from customer.parser import convert_age
 from customer.csv_reader import read_customers_csv
 from customer.pipeline import run_api_customer_pipeline
 from customer.pipeline import run_api_customers_pipeline, run_customer_database_pipeline
-from customer.database import (create_connection, get_customers)
+from customer.database import (create_connection, get_customers, create_customers_table)
 def test_run_customer_pipeline():
     result = run_customer_pipeline("data/customers.csv")
     assert "processed" in result
@@ -229,6 +231,65 @@ def test_run_customer_database_pipeline(tmp_path):
     assert len(result["rejected"]) == 1
     connection.close()
 
+def test_pipeline_keeps_previous_customers_when_later_save_fails(tmp_path):
+    customer_path = tmp_path / "customers.csv"
+    database_path = tmp_path / "astra.db"
+
+    customer_path.write_text(
+        "name,age,phone\n"
+        "Alice,25,9876543210\n"
+        "Bob,30,9123456789\n"
+        "Charlie,35,9999999999\n"
+    )
+
+    connection = create_connection(database_path)
+    create_customers_table(connection)
+
+    connection.execute("""
+        CREATE TRIGGER fail_charlie_insert
+        BEFORE INSERT ON customers
+        WHEN NEW.name = 'Charlie'
+        BEGIN
+            SELECT RAISE(ABORT, 'Simulated database failure');
+        END;
+    """)
+    connection.commit()
+    connection.close()
+
+    with pytest.raises(Exception, match="Simulated database failure"):
+        run_customer_database_pipeline(customer_path, database_path)
+
+    connection = create_connection(database_path)
+    customers = get_customers(connection)
+    connection.close()
+
+    assert [customer["name"] for customer in customers] == [
+        "Alice",
+        "Bob",
+    ]
+
+def test_pipeline_logs_and_reraises_database_failure(
+        tmp_path, monkeypatch, caplog
+):
+    customer_path = tmp_path /"customers.csv"
+    database_path = tmp_path/"astra.db"
+    customer_path.write_text(
+        "name,age,phone\n"
+        "Alice,25,9876543210\n"
+        "Bob,30, 9123456789\n"
+    )
+    original_save_customer = pipeline_module.save_customer
+    def fail_on_bob(connection,customer):
+        if customer["name"] == "Bob":
+            raise RuntimeError("Simulated save failure")
+        return original_save_customer(connection,customer)
+    monkeypatch.setattr(pipeline_module,"save_customer",fail_on_bob)
+    caplog.set_level(logging.ERROR)
+    with pytest.raises(RuntimeError, match="Simulated save failure"):
+        pipeline_module.run_customer_database_pipeline(customer_path, database_path)
+    assert "Customer database pipeline failed" in caplog.text
+    assert "Simulated save failure" in caplog.text
+    
 def test_database_pipeline_closes_connection_on_error(tmp_path,monkeypatch):
     from customer import pipeline
     database_path = tmp_path/"astra.db"
@@ -247,3 +308,4 @@ def test_database_pipeline_closes_connection_on_error(tmp_path,monkeypatch):
     assert len(connections) == 1
     with pytest.raises(Exception, match='closed'):
         connections[0].execute("SELECT 1")
+

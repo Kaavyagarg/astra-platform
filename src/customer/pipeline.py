@@ -44,5 +44,8 @@ def run_customer_database_pipeline(path, database_path):
         for customer in result["processed"]:
             save_customer(connection, customer)
         return result
+    except Exception:
+        logger.exception("Customer database pipeline failed")
+        raise 
     finally:
         connection.close()
