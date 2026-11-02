@@ -4,7 +4,7 @@ import logging
 import customer.pipeline as pipeline_module
 from customer.parser import convert_age
 from customer.csv_reader import read_customers_csv
-from customer.pipeline import run_api_customer_pipeline
+from customer.pipeline import run_api_customer_pipeline, run_json_customer_pipeline
 from customer.pipeline import run_api_customers_pipeline, run_customer_database_pipeline
 from customer.database import (create_connection, get_customers, create_customers_table)
 def test_run_customer_pipeline():
@@ -309,3 +309,27 @@ def test_database_pipeline_closes_connection_on_error(tmp_path,monkeypatch):
     with pytest.raises(Exception, match='closed'):
         connections[0].execute("SELECT 1")
 
+def test_run_json_customer_pipeline(tmp_path):
+    json_path = tmp_path / "customers.json"
+    json_path.write_text(
+        """
+        [
+            {
+                "name":"Alice",
+                "age":25,
+                "phone":"9876543210"
+            },
+            {
+                "name":"Bob",
+                "age":"abc",
+                "phone":"9123456780"
+            }
+        ]
+        """,
+        encoding = "utf-8"
+    )
+    result = run_json_customer_pipeline(json_path)
+    assert len(result["processed"]) == 1
+    assert len(result["rejected"]) == 1
+    assert result["processed"][0]["name"] == "Alice"
+    assert result["rejected"][0]["reason"] == "Age not mentioned"

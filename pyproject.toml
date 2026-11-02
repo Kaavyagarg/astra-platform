@@ -23,3 +23,5 @@ dev = [
     "hatchling>=1.32.0",
     "pytest>=9.1.1",
 ]
+[tool.hatch.build]
+dev-mode-dirs = ["src"]

@@ -7,6 +7,7 @@ from customer.parser import parse_customer
 from customer.config import CUSTOMER_DATA_FILE
 from customer.api_client import get_url_data
 from customer.parser import parse_api_customer
+from customer.json_reader import read_customer_json
 from customer.database import (create_connection, create_customers_table, save_customer)
 #logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -49,3 +50,16 @@ def run_customer_database_pipeline(path, database_path):
         raise 
     finally:
         connection.close()
+
+def run_json_customer_pipeline(path):
+    logger.info("Customer pipeline started")
+
+    customers = read_customer_json(path)
+    logger.info("Loaded %s customers",len(customers))
+
+    parsed_customers =[]
+    for customer in customers:
+        parsed_customers.append(parse_customer(customer))
+    result = process_customers(parsed_customers)
+    logger.info("Customer pipeline completed")
+    return result
