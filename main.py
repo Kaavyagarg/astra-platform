@@ -1,14 +1,22 @@
-from src.validator.validator import is_positive,is_valid_email
-from src.validator.phone import count_digits
-print(is_positive(10))
-print(is_positive(-5))
-#print(is_valid_email('john@email.com'))
-#print(is_valid_email('wrong-email'))
-print(is_valid_email('abc@gmail.com'))         
-print(is_valid_email('abc.com'))                
-print(is_valid_email('abc@gmail'))             
-print(is_valid_email('@gmail.com'))            
-print(is_valid_email('abc@.com'))               
-print(is_valid_email(""))                     
-print(is_valid_email("   "))                  
-print(count_digits('9876543210'))
+import logging
+
+from customer.pipeline import run_customer_database_pipeline
+from customer.config import CUSTOMER_DATA_FILE, DATABASE_FILE, LOG_LEVEL
+
+
+def main():
+    logging.basicConfig(
+        level = getattr(logging,LOG_LEVEL.upper(), logging.INFO)
+    )
+    result = run_customer_database_pipeline(
+        path=CUSTOMER_DATA_FILE,
+        database_path=DATABASE_FILE
+    )
+
+    print("\nAstra pipeline completed")
+    print(f"Processed: {len(result['processed'])}")
+    print(f"Rejected: {len(result['rejected'])}")
+
+
+if __name__ == "__main__":
+    main()

@@ -15,6 +15,7 @@ def test_read_customer_json_file_not_found(tmp_path):
     file_path = tmp_path / "missing.json"
     with pytest.raises(FileNotFoundError):
         read_customer_json(file_path)
+
 def test_read_customer_json_invalid_format(tmp_path):
     file_path = tmp_path / "invalid.json"
     file_path.write_text('[{"name":"Bob"',encoding="utf-8")

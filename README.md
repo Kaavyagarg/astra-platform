@@ -1,45 +1,131 @@
-# Astra Platform
+# Astra Data Platform
 
-A production-inspired Data Engineering Platform that I am building from scratch to strengthen my software engineering and data engineering skills.
+Astra is a Python-based data platform project built to develop practical data engineering skills through a working application.
 
-## 🎯 Goal
+## Current capabilities
 
-The goal of this project is to learn how production-grade data platforms are designed, built, tested and maintained.
+- CSV and JSON customer data ingestion
+- Customer parsing and validation
+- Data processing and rejection of invalid records
+- Logging and error handling
+- API data ingestion
+- SQLite database integration
+- Customer insertion, retrieval, updates and deletion
+- Batch database operations
+- Unit and integration testing
 
-This repository documents my complete learning journey from Python fundamentals to distributed data processing and cloud deployment.
-
-## 🛠️ Tech Stack
+## Technology stack
 
 - Python
+- SQLite
 - Pytest
-- Git
 - uv
+- Git
 
-## 📈 Current Progress
+## Project structure
 
-### ✅ Completed
+```text
+astra-platform/
+├── data/
+│   ├── customers.csv
+│   ├── customers.json
+│   └── customers.txt
+├── src/
+│   ├── customer/
+│   └── validator/
+├── tests/
+├── main.py
+├── pyproject.toml
+└── README.md
+```
 
-- Python project setup
-- Git version control
-- Unit testing with Pytest
-- Input validation
-- Logging
-- Modern Python project configuration using uv
+## Setup
 
-### 🚧 Coming Next
+Install project dependencies:
 
-- PostgreSQL
-- Docker
-- SQL
-- Spark
-- Airflow
-- AWS
-- CI/CD
+```bash
+uv sync
+```
 
-## 📚 Learning Philosophy
+## Run Astra
 
-Rather than building many small tutorial projects, I am building one evolving project that gradually becomes closer to a production-grade data platform.
+From the project root:
 
-Every feature is added only after understanding the engineering concepts behind it.
+```bash
+uv run --no-sync python main.py
+```
 
----
+The current application entry point runs the customer database pipeline:
+
+1. Reads customer records from the configured CSV file.
+2. Parses and processes customer records.
+3. Rejects invalid records.
+4. Saves successfully processed customers to SQLite.
+5. Reports the number of processed and rejected records.
+
+The default input file is:
+
+```text
+data/customers.csv
+```
+
+The input file can be changed using the `CUSTOMER_DATA_FILE` environment variable.
+
+The SQLite database is created at:
+
+```text
+data/astra.db
+```
+
+## Database behavior
+
+Astra currently uses the following customer table:
+
+| Column | Type |
+|---|---|
+| id | INTEGER PRIMARY KEY |
+| name | TEXT |
+| city | TEXT |
+| age | INTEGER |
+
+Each successful `save_customer()` operation commits independently.
+
+**Important:** The current CSV-to-database pipeline is append-only. Running it repeatedly inserts the same valid input records again. Duplicate prevention and upsert behavior have not yet been implemented.
+
+Batch database saving uses a separate all-or-nothing transaction.
+
+## Run tests
+
+Run the complete test suite:
+
+```bash
+uv run --no-sync pytest -q
+```
+
+## Development progress
+
+### Completed
+
+- Python fundamentals and project setup
+- Input validation and parsing
+- CSV and JSON ingestion
+- Data processing and quality checks
+- Logging and configuration
+- API integration
+- SQLite database creation and operations
+- Pipeline integration
+- Unit and integration tests
+- Runnable application entry point
+
+### Future development
+
+- Advanced SQL and data modeling
+- Apache Spark
+- Streaming and Kafka
+- Workflow orchestration with Airflow
+- FastAPI
+- Cloud infrastructure and AWS
+- Observability and reliability engineering
+- AI data platform capabilities
+
+Future capabilities will be introduced in subsequent project versions.

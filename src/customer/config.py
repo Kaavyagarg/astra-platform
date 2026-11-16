@@ -17,3 +17,10 @@ LOG_LEVEL = os.getenv(
     "LOG_LEVEL",
     "INFO"
 )
+
+def get_database_file():
+    return os.getenv(
+        "DATABSE_FILE",
+        "data/astra.db"
+    )
+DATABASE_FILE = get_database_file()
